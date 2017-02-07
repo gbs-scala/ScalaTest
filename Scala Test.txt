@@ -1,0 +1,66 @@
+
+ShoppingCart.scala
+=========================
+package com.github.shoppingcart
+
+import scala.math.BigDecimal.RoundingMode
+
+object ShoppingCart {
+
+  private val priceList: Map[String, Double] = Map(("apple", 0.60), ("orange", 0.25))
+
+  def checkout(items: Array[String]): Double = {
+    val total = items.flatMap(price).sum
+    BigDecimal(total).setScale(2, RoundingMode.HALF_EVEN).toDouble
+  }
+
+  def checkoutWithOffers(items: Array[String]): Double = {
+    val noOfApples: Int = items.count(p => p.equalsIgnoreCase("apple"))
+    val noOfOranges: Int = items.count(p => p.equalsIgnoreCase("orange"))
+    
+    val total = Offers.offer("apple")(noOfApples) + Offers.offer("orange")(noOfOranges) + 
+    BigDecimal(total).setScale(2, RoundingMode.HALF_EVEN).toDouble
+  }
+
+  def getPrice(item: String): Double = {
+    priceList.getOrElse(item toLowerCase(), 0)
+  }
+
+  def price(item: String): Option[Double] = priceList.get(item toLowerCase)
+
+}
+
+Offers.scala
+===============
+
+package com.github.shoppingcart
+
+object Offers {
+
+  def buyOneGetOne(numberOfItems: Int, costOfOne: Double): Double = ((numberOfItems / 2) + (numberOfItems % 2)) * costOfOne
+
+  def threeForTwo(numberOfItems: Int, costOfOne: Double): Double = (2 * (numberOfItems/3) + (numberOfItems %3)) * costOfOne
+
+  def offer(item: String): Int => Double = {
+    val price: Double = ShoppingCart.getPrice(item)
+    item toLowerCase() match {
+      case "apple" => (numberOfItems:Int) => buyOneGetOne(numberOfItems, price)
+      case "orange" => (numberOfItems:Int) => threeForTwo(numberOfItems, price)
+      case _ => (numberOfItems:Int) => numberOfItems * price
+    }
+  }
+
+}
+
+
+MainApp.Scala
+================
+package com.github.shoppingcart
+
+object MainApp {
+
+  def main(args: Array[String]) {
+    println("[ " + args.mkString(", ") + " ] => £" + ShoppingCart.checkoutWithOffers(args))
+  }
+
+}
